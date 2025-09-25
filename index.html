@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Ethiopia Globe - Minimal</title>
+    <title>Ethiopia Globe</title>
     <script src="https://cdn.jsdelivr.net/npm/cesium@1.107/Build/Cesium/Cesium.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/cesium@1.107/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
@@ -15,13 +15,9 @@
 </head>
 <body>
     <div id="cesiumContainer"></div>
-    <div id="status">Starting...</div>
+    <div id="status">Loading Ethiopia...</div>
 
     <script>
-        const status = document.getElementById('status');
-        status.textContent = "Loading Cesium...";
-
-        // Create viewer with ONLY OpenStreetMap (no NASA, no risk)
         const viewer = new Cesium.Viewer('cesiumContainer', {
             imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
             terrainProvider: Cesium.createWorldTerrain(),
@@ -35,11 +31,8 @@
             timeline: false,
             infoBox: false
         });
-
         viewer.cesiumWidget.creditContainer.style.display = "none";
-        status.textContent = "Adding Ethiopia...";
 
-        // Simple Ethiopia (guaranteed valid)
         const ethiopia = {
             "type": "FeatureCollection",
             "features": [{
@@ -54,32 +47,23 @@
             }]
         };
 
-        // Load Ethiopia
         Cesium.GeoJsonDataSource.load(ethiopia, {
             fill: Cesium.Color.GREEN.withAlpha(0.7),
             stroke: Cesium.Color.WHITE,
             clampToGround: true,
             extrudedHeight: 2000
-        }).then(function(dataSource) {
-            viewer.dataSources.add(dataSource);
-            status.textContent = "✅ SUCCESS! Click the green area.";
-            
+        }).then(ds => {
+            viewer.dataSources.add(ds);
+            document.getElementById('status').textContent = "✅ Click green area!";
             viewer.camera.flyTo({
                 destination: Cesium.Rectangle.fromDegrees(33, 3, 48, 15),
                 duration: 2.0
             });
-
-            // Click alert
-            const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-            handler.setInputAction(function(click) {
-                const picked = viewer.scene.pick(click.position);
-                if (picked && picked.id) {
-                    alert("🌍 ETHIOPIA LOADED SUCCESSFULLY!");
-                }
+            const h = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+            h.setInputAction(e => {
+                const p = viewer.scene.pick(e.position);
+                if (p?.id) alert("🌍 ETHIOPIA WORKS!");
             }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        }).otherwise(function(error) {
-            status.textContent = "❌ Ethiopia failed: " + error.message;
-            console.error(error);
         });
     </script>
 </body>
