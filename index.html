@@ -1,70 +1,41 @@
+<!-- Save as index.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Ethiopia Globe</title>
-    <script src="https://cdn.jsdelivr.net/npm/cesium@1.107/Build/Cesium/Cesium.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/cesium@1.107/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <style>
-        html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; padding: 0; }
-        #status {
-            position: absolute; top: 10px; left: 10px;
-            background: rgba(0,0,0,0.8); color: white; padding: 8px; font-family: monospace;
-        }
-    </style>
+  <title>Ethiopia Crop Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>#map { height: 100vh; }</style>
 </head>
 <body>
-    <div id="cesiumContainer"></div>
-    <div id="status">Loading Ethiopia...</div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Base map
+const map = L.map('map').setView([9.145, 40.489], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    <script>
-        const viewer = new Cesium.Viewer('cesiumContainer', {
-            imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
-            terrainProvider: Cesium.createWorldTerrain(),
-            baseLayerPicker: false,
-            fullscreenButton: false,
-            geocoder: false,
-            homeButton: false,
-            sceneModePicker: false,
-            navigationHelpButton: false,
-            animation: false,
-            timeline: false,
-            infoBox: false
-        });
-        viewer.cesiumWidget.creditContainer.style.display = "none";
+// NASA GIBS Cloud Layer (as WMS)
+L.tileLayer.wms("https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi", {
+  layers: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+  format: 'image/jpeg',
+  transparent: false,
+  opacity: 0.7,
+  time: new Date().toISOString().split('T')[0]
+}).addTo(map);
 
-        const ethiopia = {
-            "type": "FeatureCollection",
-            "features": [{
-                "type": "Feature",
-                "properties": { "name": "Ethiopia" },
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [[
-                        [33.0, 14.9], [48.0, 14.9], [48.0, 3.4], [33.0, 3.4], [33.0, 14.9]
-                    ]]
-                }
-            }]
-        };
-
-        Cesium.GeoJsonDataSource.load(ethiopia, {
-            fill: Cesium.Color.GREEN.withAlpha(0.7),
-            stroke: Cesium.Color.WHITE,
-            clampToGround: true,
-            extrudedHeight: 2000
-        }).then(ds => {
-            viewer.dataSources.add(ds);
-            document.getElementById('status').textContent = "✅ Click green area!";
-            viewer.camera.flyTo({
-                destination: Cesium.Rectangle.fromDegrees(33, 3, 48, 15),
-                duration: 2.0
-            });
-            const h = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-            h.setInputAction(e => {
-                const p = viewer.scene.pick(e.position);
-                if (p?.id) alert("🌍 ETHIOPIA WORKS!");
-            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        });
-    </script>
+// Ethiopia crop zones (GeoJSON)
+fetch('https://raw.githubusercontent.com/your-repo/ethiopia_crops.geojson')
+  .then(r => r.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: { fillColor: 'green', fillOpacity: 0.6, color: 'white' },
+      onEachFeature: (f, l) => {
+        l.bindPopup(`<b>${f.properties.region}</b><br>Crop: ${f.properties.crop}`);
+      }
+    }).addTo(map);
+  });
+</script>
 </body>
 </html>
