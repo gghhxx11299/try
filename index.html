@@ -1,1252 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ethiopia Agricultural Intelligence Dashboard</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* =============== GLOBAL STYLES =============== */
-        :root {
-            --background-color: #0D1117;
-            --primary-accent: #58A6FF;
-            --secondary-accent: #FF7B72;
-            --text-color: #C9D1D9;
-            --card-bg: #161B22;
-            --border-color: #30363d;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--background-color);
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-        /* Header */
-        header {
-            background-color: var(--card-bg);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            position: sticky;
-            top: 0;
-            z-index: 3000;
-            border-bottom: 1px solid var(--primary-accent);
-        }
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-        }
-        .logo img {
-            height: 40px;
-            margin-right: 10px;
-            border-radius: 4px;
-        }
-        .logo h1 {
-            color: var(--primary-accent);
-            font-size: 1.5rem;
-            font-family: 'Montserrat', sans-serif;
-        }
-        .nav-links {
-            display: flex;
-            list-style: none;
-        }
-        .nav-links li {
-            margin-left: 1rem;
-        }
-        .nav-links a {
-            color: var(--text-color);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-        .nav-links a:hover, .nav-links a.active {
-            color: var(--primary-accent);
-        }
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--primary-accent);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        /* Dashboard Wrapper */
-        #app-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        #app {
-            display: flex;
-            flex: 1;
-            position: relative;
-            min-height: 70vh;
-        }
-        #sidebar {
-            width: 380px;
-            background: var(--card-bg);
-            overflow-y: auto;
-            box-shadow: 3px 0 15px rgba(0,0,0,0.3);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            color: var(--text-color);
-            border-right: 1px solid var(--primary-accent);
-            transition: transform 0.3s ease;
-        }
-        #sidebar.collapsed {
-            transform: translateX(-100%);
-        }
-        #header {
-            padding: 20px;
-            background: linear-gradient(135deg, #0d47a1 0%, #1B5E20 100%);
-            color: white;
-            text-align: center;
-        }
-        #controls {
-            padding: 18px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .control-group {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .control-group:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        .control-group h3 {
-            font-size: 1.2em;
-            margin-bottom: 15px;
-            color: var(--primary-accent);
-            font-family: 'Montserrat', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 10px 12px;
-            margin: 6px 0;
-            background: var(--background-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.95em;
-            transition: all 0.2s ease;
-        }
-        .btn:hover {
-            background: rgba(88, 166, 255, 0.1);
-            border-left: 4px solid var(--primary-accent);
-        }
-        .btn.active, .btn.weather-active {
-            background: rgba(88, 166, 255, 0.2);
-            color: var(--primary-accent);
-            border-left: 4px solid var(--primary-accent);
-            font-weight: 700;
-        }
-        #data-panel {
-            padding: 20px;
-            flex: 1;
-            overflow-y: auto;
-        }
-        .region-info {
-            background: var(--background-color);
-            border-radius: 10px;
-            padding: 18px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .region-info h4 {
-            color: var(--primary-accent);
-            margin-bottom: 12px;
-            font-size: 1.2em;
-            font-family: 'Montserrat', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .stat-item {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .stat-label { font-size: 0.8em; color: #8B949E; }
-        .stat-value { font-size: 1em; font-weight: 700; color: var(--primary-accent); }
-        .stat-value.danger { color: var(--secondary-accent); }
-        .stat-value.warning { color: #FFA500; }
-        .stat-value.success { color: #3FB950; }
-        #map-container {
-            flex: 1;
-            position: relative;
-            height: 100%;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        #status {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(13, 17, 23, 0.9);
-            color: var(--text-color);
-            padding: 10px 14px;
-            border-radius: 8px;
-            z-index: 1000;
-            max-width: 280px;
-            border: 1px solid var(--primary-accent);
-            font-size: 0.9em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .legend, #timeline-controls {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            background: var(--card-bg);
-            padding: 12px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 1000;
-            max-width: 260px;
-            border: 1px solid var(--primary-accent);
-            font-size: 0.9em;
-        }
-        #timeline-controls {
-            bottom: 100px;
-        }
-        #menu-toggle {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: var(--card-bg);
-            color: var(--primary-accent);
-            border: 1px solid var(--primary-accent);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            font-size: 1.1em;
-            z-index: 1100;
-            display: none;
-            cursor: pointer;
-        }
-        /* CHART CONTAINER FIXES */
-        .chart-container {
-            height: 180px;
-            margin-top: 12px;
-            position: relative;
-            width: 100%;
-        }
-        .chart-container canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        /* Legend Styles */
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin: 5px 0;
-        }
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
-            border-radius: 3px;
-        }
-        /* Footer */
-        footer {
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            padding: 2rem 0 1rem;
-            margin-top: auto;
-            border-top: 1px solid var(--primary-accent);
-        }
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .footer-section h3 {
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-            color: var(--primary-accent);
-            font-family: 'Montserrat', sans-serif;
-        }
-        .footer-section a {
-            display: block;
-            color: var(--text-color);
-            text-decoration: none;
-            margin-bottom: 0.4rem;
-        }
-        .footer-section a:hover {
-            color: var(--primary-accent);
-        }
-        .footer-bottom {
-            text-align: center;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
-            font-size: 0.9em;
-        }
-        /* Mobile Responsive */
-        @media (max-width: 992px) {
-            #sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                width: 320px;
-                z-index: 2000;
-                transform: translateX(-100%);
-            }
-            #sidebar.visible {
-                transform: translateX(0);
-            }
-            #menu-toggle {
-                display: block;
-            }
-            #app {
-                flex-direction: column;
-                height: auto;
-            }
-            #map-container {
-                height: 60vh;
-                min-height: 400px;
-            }
-            .chart-container {
-                height: 200px;
-                min-height: 200px;
-            }
-            .stat-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background: var(--card-bg);
-                flex-direction: column;
-                padding: 1rem 0;
-                border-top: 1px solid var(--primary-accent);
-            }
-            .nav-links.active { display: flex; }
-            .nav-links li { 
-                margin: 0.5rem 1.5rem; 
-            }
-            .nav-links a {
-                font-size: 1rem;
-                padding: 0.5rem 0;
-            }
-            .mobile-menu-btn { display: block; }
-            .legend, #timeline-controls { 
-                max-width: 220px; 
-                font-size: 0.85em; 
-                padding: 10px;
-            }
-            #timeline-controls { 
-                bottom: 80px; 
-            }
-            .chart-container {
-                height: 180px;
-            }
-        }
-        @media (max-width: 480px) {
-            #sidebar { 
-                width: 100%; 
-            }
-            .btn span { 
-                display: none; 
-            }
-            .btn i { 
-                margin: 0 auto; 
-            }
-            .chart-container {
-                height: 160px;
-            }
-            #data-panel {
-                padding: 15px;
-            }
-            .region-info {
-                padding: 15px;
-            }
-        }
-        @media (max-width: 360px) {
-            .chart-container {
-                height: 140px;
-            }
-        }
-        .spinner {
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 2px solid var(--primary-accent);
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .export-btn {
-            background: var(--primary-accent);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .export-btn:hover {
-            background: #3d8de0;
-        }
-        .region-type {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            margin-left: 10px;
-        }
-        .highlands { background: #1B5E20; color: white; }
-        .lowlands { background: #BF360C; color: white; }
-        .mixed { background: #FF8F00; color: white; }
-        .chart-title {
-            font-size: 0.9em;
-            margin-bottom: 5px;
-            color: var(--primary-accent);
-            font-weight: 600;
-        }
-        .national-summary {
-            background: var(--background-color);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .summary-item {
-            text-align: center;
-            padding: 10px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .summary-value {
-            font-size: 1.5em;
-            font-weight: 700;
-            margin: 5px 0;
-        }
-        .summary-label {
-            font-size: 0.8em;
-            color: #8B949E;
-        }
-        .metrics-section {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border-color);
-        }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .metric-item {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            font-size: 0.9em;
-        }
-        .metric-label {
-            color: #8B949E;
-            font-size: 0.8em;
-            margin-bottom: 5px;
-        }
-        .metric-value {
-            font-weight: 600;
-            color: var(--primary-accent);
-        }
-        .metric-value.danger { color: var(--secondary-accent); }
-        .metric-value.warning { color: #FFA500; }
-        .metric-value.success { color: #3FB950; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ethiopia Agri MVP</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <img src="image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iNCIgZmlsbD0iIzU4QTZGRiIvPgo8cGF0aCBkPSJNMTAgMTVIMzBWMTdIMTBWMTVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTAgMjFIMzBWMjNIMTBWMjFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTAgMjdIMzBWMjlIMTBWMjdaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="Logo">
-                    <h1>Ethiopia Agricultural Intelligence</h1>
-                </div>
-                <ul class="nav-links">
-                    <li><a href="#" class="active">Dashboard</a></li>
-                    <li><a href="#">Economic Data</a></li>
-                    <li><a href="#">Demographic Data</a></li>
-                    <li><a href="#">Exchange Rates</a></li>
-                    <li><a href="#">News</a></li>
-                </ul>
-                <button class="mobile-menu-btn">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </nav>
-        </div>
-    </header>
-    <!-- Dashboard Wrapper -->
-    <div id="app-wrapper">
-        <div id="app">
-            <!-- Sidebar -->
-            <div id="sidebar">
-                <div id="header">
-                    <h2>Agricultural Dashboard</h2>
-                    <p>Real-time monitoring of Ethiopian agriculture</p>
-                </div>
-                <div id="controls">
-                    <div class="control-group">
-                        <h3><i class="fas fa-filter"></i> Crop Filter</h3>
-                        <button class="btn active" data-crop="all">
-                            <i class="fas fa-seedling"></i>
-                            <span>All Crops</span>
-                        </button>
-                        <button class="btn" data-crop="teff">
-                            <i class="fas fa-wheat-alt"></i>
-                            <span>Teff</span>
-                        </button>
-                        <button class="btn" data-crop="maize">
-                            <i class="fas fa-corn"></i>
-                            <span>Maize</span>
-                        </button>
-                        <button class="btn" data-crop="wheat">
-                            <i class="fas fa-bread-slice"></i>
-                            <span>Wheat</span>
-                        </button>
-                        <button class="btn" data-crop="coffee">
-                            <i class="fas fa-coffee"></i>
-                            <span>Coffee</span>
-                        </button>
-                    </div>
-                    <div class="control-group">
-                        <h3><i class="fas fa-cloud-sun"></i> Weather Layers</h3>
-                        <button class="btn" data-layer="clouds">
-                            <i class="fas fa-cloud"></i>
-                            <span>Cloud Cover</span>
-                        </button>
-                        <button class="btn" data-layer="rainfall">
-                            <i class="fas fa-cloud-rain"></i>
-                            <span>Rainfall Data</span>
-                        </button>
-                        <button class="btn" data-layer="temperature">
-                            <i class="fas fa-thermometer-half"></i>
-                            <span>Land Temperature</span>
-                        </button>
-                        <button class="btn" data-layer="precipitation">
-                            <i class="fas fa-tint"></i>
-                            <span>Precipitation Rate</span>
-                        </button>
-                    </div>
-                    <div class="control-group">
-                        <h3><i class="fas fa-chart-line"></i> Analytics</h3>
-                        <button class="btn" id="export-btn">
-                            <i class="fas fa-file-export"></i>
-                            <span>Export Data (CSV)</span>
-                        </button>
-                        <button class="btn" id="reset-btn">
-                            <i class="fas fa-redo"></i>
-                            <span>Reset Dashboard</span>
-                        </button>
-                    </div>
-                </div>
-                <div id="data-panel">
-                    <div class="national-summary">
-                        <h4><i class="fas fa-chart-bar"></i> National Summary</h4>
-                        <div class="summary-grid">
-                            <div class="summary-item">
-                                <div class="summary-value">42.7M</div>
-                                <div class="summary-label">Hectares Cultivated</div>
-                            </div>
-                            <div class="summary-item">
-                                <div class="summary-value">3.2T</div>
-                                <div class="summary-label">Total Yield (tons)</div>
-                            </div>
-                            <div class="summary-item">
-                                <div class="summary-value">7.5</div>
-                                <div class="summary-label">Avg Yield (t/ha)</div>
-                            </div>
-                            <div class="summary-item">
-                                <div class="summary-value">78%</div>
-                                <div class="summary-label">Rainfall Adequacy</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="region-info">
-                        <h4><i class="fas fa-map-marker-alt"></i> Selected Region: <span id="region-name">None</span></h4>
-                        <div class="stat-grid">
-                            <div class="stat-item">
-                                <div class="stat-label">Yield (tons/hectare)</div>
-                                <div class="stat-value" id="yield-value">-</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Cultivated Area (ha)</div>
-                                <div class="stat-value" id="area-value">-</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Soil Moisture</div>
-                                <div class="stat-value" id="soil-moisture-value">-</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Crop Health Index</div>
-                                <div class="stat-value" id="health-value">-</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Drought Risk</div>
-                                <div class="stat-value" id="drought-value">-</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Irrigation Coverage</div>
-                                <div class="stat-value" id="irrigation-value">-</div>
-                            </div>
-                        </div>
-                        <div class="metrics-section">
-                            <h4><i class="fas fa-chart-line"></i> Additional Metrics</h4>
-                            <div class="metrics-grid">
-                                <div class="metric-item">
-                                    <div class="metric-label">Fertilizer Usage</div>
-                                    <div class="metric-value" id="fertilizer-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Pest Pressure</div>
-                                    <div class="metric-value" id="pest-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Market Price Index</div>
-                                    <div class="metric-value" id="price-index-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Labor Availability</div>
-                                    <div class="metric-value" id="labor-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Storage Quality</div>
-                                    <div class="metric-value" id="storage-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Extension Services</div>
-                                    <div class="metric-value" id="extension-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Climate Resilience</div>
-                                    <div class="metric-value" id="resilience-value">-</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Biodiversity</div>
-                                    <div class="metric-value" id="biodiversity-value">-</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chart-title">Yield Trend (2020-2024)</div>
-                        <div class="chart-container">
-                            <canvas id="yield-chart"></canvas>
-                        </div>
-                        <div class="chart-title">Price Trend (2020-2024)</div>
-                        <div class="chart-container">
-                            <canvas id="price-chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Map Container -->
-            <div id="map-container">
-                <button id="menu-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div id="status">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Click on a region to view detailed information</span>
-                </div>
-                <div id="timeline-controls">
-                    <label for="date-slider">Date: <span id="date-display">January 1, 2024</span></label>
-                    <input type="range" id="date-slider" min="1" max="365" value="1" class="slider">
-                </div>
-                <div class="legend">
-                    <h4>Yield Classification</h4>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #1B5E20;"></div>
-                        <span>Excellent (>8 t/ha)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #4CAF50;"></div>
-                        <span>Good (6-8 t/ha)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #FFC107;"></div>
-                        <span>Fair (4-6 t/ha)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #FF5722;"></div>
-                        <span>Poor (<4 t/ha)</span>
-                    </div>
-                </div>
-                <div id="map"></div>
-            </div>
-        </div>
+<body style="margin:0; font-family:system-ui; display:flex; flex-direction:column; height:100vh;">
+  <h2 style="padding:10px; background:#f0f0f0; margin:0;">Ethiopia Agri Dashboard (MVP)</h2>
+
+  <div style="display:flex; flex:1; flex-wrap:wrap;">
+    <!-- Sidebar -->
+    <div id="sidebar" style="width:300px; padding:15px; overflow-y:auto; background:#fafafa; border-right:1px solid #ccc;">
+      <h3>Crop Filter</h3>
+      <button class="crop-btn active" data-crop="all">All Crops</button><br><br>
+      <button class="crop-btn" data-crop="teff">Teff</button><br>
+      <button class="crop-btn" data-crop="maize">Maize</button><br>
+      <button class="crop-btn" data-crop="wheat">Wheat</button><br>
+      <button class="crop-btn" data-crop="coffee">Coffee</button><br><br>
+
+      <h3>Weather Layers</h3>
+      <button class="weather-btn" data-layer="rainfall">Rainfall</button><br>
+      <button class="weather-btn" data-layer="temperature">Temperature</button><br><br>
+
+      <div id="region-info">
+        <h3>Region: <span id="region-name">None</span></h3>
+        <p>Yield: <span id="yield-value">-</span> t/ha</p>
+        <p>Rainfall: <span id="rainfall-value">-</span> mm</p>
+        <p>Temp: <span id="temp-value">-</span> °C</p>
+
+        <canvas id="yield-chart" height="100" style="width:100%; margin-top:10px;"></canvas>
+        <canvas id="rainfall-chart" height="100" style="width:100%; margin-top:10px;"></canvas>
+      </div>
     </div>
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>About Finedatas</h3>
-                    <p>Ethiopia's premier data hub providing comprehensive economic, demographic, and agricultural statistics.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                    </div>
-                </div>
-                <div class="footer-section">
-                    <h3>Quick Links</h3>
-                    <a href="economic.html">Economic Data</a>
-                    <a href="demographic.html">Demographic Data</a>
-                    <a href="agricultural.html">Agricultural Data</a>
-                    <a href="exchange.html">Exchange Rates</a>
-                    <a href="news.html">News</a>
-                </div>
-                <div class="footer-section">
-                    <h3>Contact Us</h3>
-                    <p><i class="fas fa-envelope"></i> gabrielmulugeta1@gmail.com</p>
-                    <p><i class="fas fa-phone"></i> +251 991 168 917</p>
-                    <p><i class="fas fa-phone"></i> +251 701 327 186</p>
-                    <p><i class="fas fa-map-marker-alt"></i> Addis Ababa, Ethiopia</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 Finedatas. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("Initializing Ethiopia Agricultural Dashboard...");
-            const map = L.map('map', {
-                center: [9.145, 40.4897],
-                zoom: 6,
-                minZoom: 5,
-                maxZoom: 10
-            });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
 
-            // Enhanced region data with crop-specific yields
-            const ethiopiaRegions = {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "name": "Tigray",
-                            "yield": 7.8,
-                            "area": 520000,
-                            "crops": ["Teff", "Maize", "Wheat", "Sorghum"],
-                            "type": "Highlands",
-                            "cropYields": {
-                                "all": 7.8,
-                                "teff": 8.1,
-                                "maize": 7.5,
-                                "wheat": 7.9,
-                                "coffee": 0
-                            }
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [36.5, 14.8], [39.8, 14.8], [39.8, 12.5], [36.5, 12.5], [36.5, 14.8]
-                            ]]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "name": "Amhara",
-                            "yield": 8.2,
-                            "area": 1560000,
-                            "crops": ["Teff", "Maize", "Wheat", "Barley"],
-                            "type": "Highlands",
-                            "cropYields": {
-                                "all": 8.2,
-                                "teff": 8.5,
-                                "maize": 8.0,
-                                "wheat": 8.3,
-                                "coffee": 0
-                            }
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [35.5, 12.5], [39.8, 12.5], [39.8, 9.5], [35.5, 9.5], [35.5, 12.5]
-                            ]]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "name": "Oromia",
-                            "yield": 7.5,
-                            "area": 2840000,
-                            "crops": ["Coffee", "Maize", "Teff", "Wheat", "Barley"],
-                            "type": "Mixed",
-                            "cropYields": {
-                                "all": 7.5,
-                                "teff": 7.2,
-                                "maize": 7.8,
-                                "wheat": 7.0,
-                                "coffee": 8.0
-                            }
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [34.5, 4.5], [42.5, 4.5], [42.5, 10.5], [34.5, 10.5], [34.5, 4.5]
-                            ]]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "name": "SNNPR",
-                            "yield": 6.8,
-                            "area": 1120000,
-                            "crops": ["Enset", "Coffee", "Maize", "Teff"],
-                            "type": "Mixed",
-                            "cropYields": {
-                                "all": 6.8,
-                                "teff": 6.5,
-                                "maize": 7.0,
-                                "wheat": 6.2,
-                                "coffee": 7.5
-                            }
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [34.5, 4.5], [38.5, 4.5], [38.5, 8.5], [34.5, 8.5], [34.5, 4.5]
-                            ]]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "name": "Afar",
-                            "yield": 3.2,
-                            "area": 720000,
-                            "crops": ["Sorghum", "Maize"],
-                            "type": "Lowlands",
-                            "cropYields": {
-                                "all": 3.2,
-                                "teff": 0,
-                                "maize": 3.5,
-                                "wheat": 0,
-                                "coffee": 0
-                            }
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [39.8, 14.8], [42.5, 14.8], [42.5, 8.5], [39.8, 8.5], [39.8, 14.8]
-                            ]]
-                        }
-                    },
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "name": "Somali",
-                            "yield": 2.8,
-                            "area": 3270000,
-                            "crops": ["Sorghum", "Maize"],
-                            "type": "Lowlands",
-                            "cropYields": {
-                                "all": 2.8,
-                                "teff": 0,
-                                "maize": 3.0,
-                                "wheat": 0,
-                                "coffee": 0
-                            }
-                        },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [39.8, 8.5], [48.0, 8.5], [48.0, 3.5], [39.8, 3.5], [39.8, 8.5]
-                            ]]
-                        }
-                    }
-                ]
-            };
+    <!-- Map -->
+    <div id="map" style="flex:1; min-height:400px;"></div>
+  </div>
 
-            function getColor(yieldValue) {
-                return yieldValue > 8 ? '#1B5E20' :
-                       yieldValue > 6 ? '#4CAF50' :
-                       yieldValue > 4 ? '#FFC107' :
-                       '#FF5722';
+  <script>
+    // Region data with crop-specific yields and weather
+    const ethiopiaRegions = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: {
+            name: "Oromia",
+            cropYields: { all: 7.5, teff: 7.2, maize: 7.8, wheat: 7.0, coffee: 8.0 },
+            cropWeather: {
+              all: { rainfall: 950, temp: 20 },
+              teff: { rainfall: 900, temp: 21 },
+              maize: { rainfall: 920, temp: 22 },
+              wheat: { rainfall: 880, temp: 19 },
+              coffee: { rainfall: 1200, temp: 24 }
             }
-
-            function getRegionYield(feature, crop) {
-                if (crop === 'all') return feature.properties.yield;
-                return feature.properties.cropYields[crop] || feature.properties.yield;
+          },
+          geometry: { type: "Polygon", coordinates: [[[34.5,4.5],[42.5,4.5],[42.5,10.5],[34.5,10.5],[34.5,4.5]]] }
+        },
+        {
+          type: "Feature",
+          properties: {
+            name: "Amhara",
+            cropYields: { all: 8.2, teff: 8.5, maize: 8.0, wheat: 8.3, coffee: 0 },
+            cropWeather: {
+              all: { rainfall: 1100, temp: 16 },
+              teff: { rainfall: 1150, temp: 15 },
+              maize: { rainfall: 1050, temp: 17 },
+              wheat: { rainfall: 1120, temp: 14 },
+              coffee: { rainfall: 0, temp: 0 }
             }
+          },
+          geometry: { type: "Polygon", coordinates: [[[35.5,12.5],[39.8,12.5],[39.8,9.5],[35.5,9.5],[35.5,12.5]]] }
+        }
+      ]
+    };
 
-            let currentCrop = 'all';
-            let regionLayer;
+    // Initialize map
+    const map = L.map('map').setView([9.145, 40.4897], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-            function updateMap() {
-                if (regionLayer) map.removeLayer(regionLayer);
-                regionLayer = L.geoJSON(ethiopiaRegions, {
-                    style: function(feature) {
-                        const yieldValue = getRegionYield(feature, currentCrop);
-                        return {
-                            fillColor: getColor(yieldValue),
-                            weight: 2,
-                            opacity: 1,
-                            color: 'white',
-                            dashArray: '3',
-                            fillOpacity: 0.7
-                        };
-                    },
-                    onEachFeature: function(feature, layer) {
-                        const yieldValue = getRegionYield(feature, currentCrop);
-                        layer.bindPopup(`
-                            <div>
-                                <h3>${feature.properties.name}</h3>
-                                <p><strong>Yield:</strong> ${yieldValue} t/ha</p>
-                                <p><strong>Area:</strong> ${feature.properties.area.toLocaleString()} ha</p>
-                                <p><strong>Main Crops:</strong> ${feature.properties.crops.join(', ')}</p>
-                                <p><strong>Region Type:</strong> ${feature.properties.type}</p>
-                            </div>
-                        `);
-                        layer.on('click', function(e) {
-                            const baseYield = getRegionYield(feature, currentCrop);
-                            const metrics = generateRegionMetrics(feature.properties.name, baseYield);
-                            document.getElementById('region-name').textContent = feature.properties.name;
-                            document.getElementById('yield-value').textContent = metrics.yield.toFixed(1) + ' t/ha';
-                            document.getElementById('area-value').textContent = Math.round(metrics.area).toLocaleString() + ' ha';
-                            document.getElementById('soil-moisture-value').textContent = metrics.soilMoisture.toFixed(1) + '%';
-                            document.getElementById('health-value').textContent = Math.round(metrics.healthIndex);
-                            document.getElementById('drought-value').textContent = metrics.droughtRisk.toFixed(1) + '%';
-                            document.getElementById('irrigation-value').textContent = metrics.irrigation.toFixed(1) + '%';
-                            document.getElementById('fertilizer-value').textContent = metrics.fertilizer.toFixed(1) + '%';
-                            document.getElementById('pest-value').textContent = metrics.pestPressure.toFixed(1) + '%';
-                            document.getElementById('price-index-value').textContent = Math.round(metrics.priceIndex);
-                            document.getElementById('labor-value').textContent = metrics.labor.toFixed(1) + '%';
-                            document.getElementById('storage-value').textContent = metrics.storage.toFixed(1) + '%';
-                            document.getElementById('extension-value').textContent = metrics.extension.toFixed(1) + '%';
-                            document.getElementById('resilience-value').textContent = metrics.resilience.toFixed(1) + '%';
-                            document.getElementById('biodiversity-value').textContent = metrics.biodiversity.toFixed(1) + '%';
-                            applyMetricColors(metrics);
-                            updateCharts(feature.properties.name, metrics);
-                            document.querySelector('#status span').textContent = 
-                                `Viewing data for ${feature.properties.name} (${currentCrop === 'all' ? 'All Crops' : currentCrop})`;
-                        });
-                    }
-                }).addTo(map);
-            }
+    let currentCrop = 'all';
+    let geoLayer;
 
-            function generateRegionMetrics(regionName, baseYield) {
-                const isHighland = regionName === 'Tigray' || regionName === 'Amhara';
-                const isLowland = regionName === 'Afar' || regionName === 'Somali';
-                return {
-                    yield: baseYield,
-                    area: isHighland ? baseYield * 70000 : 
-                          isLowland ? baseYield * 1200000 : baseYield * 400000,
-                    soilMoisture: isHighland ? (75 + Math.random() * 15) : 
-                                 isLowland ? (30 + Math.random() * 20) : (55 + Math.random() * 20),
-                    healthIndex: 60 + (baseYield * 5),
-                    droughtRisk: isHighland ? (10 + Math.random() * 15) : 
-                                isLowland ? (40 + Math.random() * 30) : (20 + Math.random() * 20),
-                    irrigation: isHighland ? (35 + Math.random() * 20) : 
-                                isLowland ? (5 + Math.random() * 10) : (20 + Math.random() * 15),
-                    fertilizer: isHighland ? (65 + Math.random() * 20) : 
-                                isLowland ? (15 + Math.random() * 20) : (40 + Math.random() * 25),
-                    pestPressure: 20 + Math.random() * 40,
-                    priceIndex: 50 + (baseYield * 8),
-                    labor: isHighland ? (80 + Math.random() * 15) : 
-                           isLowland ? (40 + Math.random() * 30) : (60 + Math.random() * 25),
-                    storage: isHighland ? (70 + Math.random() * 20) : 
-                             isLowland ? (30 + Math.random() * 30) : (50 + Math.random() * 25),
-                    extension: isHighland ? (75 + Math.random() * 15) : 
-                               isLowland ? (25 + Math.random() * 30) : (50 + Math.random() * 25),
-                    resilience: isHighland ? (70 + Math.random() * 20) : 
-                                isLowland ? (30 + Math.random() * 30) : (50 + Math.random() * 25),
-                    biodiversity: isHighland ? (60 + Math.random() * 25) : 
-                                  isLowland ? (40 + Math.random() * 30) : (70 + Math.random() * 20)
-                };
-            }
+    function getColor(yield) {
+      return yield > 8 ? '#1B5E20' : yield > 6 ? '#4CAF50' : yield > 4 ? '#FFC107' : '#FF5722';
+    }
 
-            function applyMetricColors(metrics) {
-                setMetricColor('yield-value', metrics.yield, 6, 8);
-                setMetricColor('soil-moisture-value', metrics.soilMoisture, 50, 70);
-                setMetricColor('health-value', metrics.healthIndex, 70, 85);
-                setMetricColor('drought-value', metrics.droughtRisk, 20, 40, true);
-                setMetricColor('irrigation-value', metrics.irrigation, 30, 50);
-                setMetricColor('fertilizer-value', metrics.fertilizer, 40, 60);
-                setMetricColor('pest-value', metrics.pestPressure, 30, 50, true);
-                setMetricColor('labor-value', metrics.labor, 50, 70);
-                setMetricColor('storage-value', metrics.storage, 50, 70);
-                setMetricColor('extension-value', metrics.extension, 50, 70);
-                setMetricColor('resilience-value', metrics.resilience, 50, 70);
-                setMetricColor('biodiversity-value', metrics.biodiversity, 50, 70);
-            }
+    function getRegionData(feature, crop) {
+      const props = feature.properties;
+      const yield = crop === 'all' ? props.cropYields.all : (props.cropYields[crop] || props.cropYields.all);
+      const weather = crop === 'all' ? props.cropWeather.all : (props.cropWeather[crop] || props.cropWeather.all);
+      return { yield, ...weather };
+    }
 
-            function setMetricColor(elementId, value, warningThreshold, successThreshold, reverse = false) {
-                const element = document.getElementById(elementId);
-                element.classList.remove('danger', 'warning', 'success');
-                if (reverse) {
-                    if (value > successThreshold) element.classList.add('danger');
-                    else if (value > warningThreshold) element.classList.add('warning');
-                    else element.classList.add('success');
-                } else {
-                    if (value < warningThreshold) element.classList.add('danger');
-                    else if (value < successThreshold) element.classList.add('warning');
-                    else element.classList.add('success');
-                }
-            }
+    function updateMap() {
+      if (geoLayer) map.removeLayer(geoLayer);
+      geoLayer = L.geoJSON(ethiopiaRegions, {
+        style: f => ({ fillColor: getColor(getRegionData(f, currentCrop).yield), weight: 1, fillOpacity: 0.7 }),
+        onEachFeature: (f, layer) => {
+          layer.on('click', () => {
+            const data = getRegionData(f, currentCrop);
+            document.getElementById('region-name').textContent = f.properties.name;
+            document.getElementById('yield-value').textContent = data.yield.toFixed(1);
+            document.getElementById('rainfall-value').textContent = data.rainfall;
+            document.getElementById('temp-value').textContent = data.temp;
 
-            let yieldChart, priceChart;
-            function initializeCharts() {
-                const yieldCtx = document.getElementById('yield-chart').getContext('2d');
-                yieldChart = new Chart(yieldCtx, {
-                    type: 'line',
-                     {
-                        labels: ['2020', '2021', '2022', '2023', '2024'],
-                        datasets: [{
-                            label: 'Yield (t/ha)',
-                             [6.2, 6.8, 7.1, 7.5, 7.8],
-                            borderColor: '#58A6FF',
-                            backgroundColor: 'rgba(88, 166, 255, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: {
-                                beginAtZero: false,
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#C9D1D9' }
-                            },
-                            x: {
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#C9D1D9' }
-                            }
-                        }
-                    }
-                });
-                const priceCtx = document.getElementById('price-chart').getContext('2d');
-                priceChart = new Chart(priceCtx, {
-                    type: 'bar',
-                     {
-                        labels: ['2020', '2021', '2022', '2023', '2024'],
-                        datasets: [{
-                            label: 'Price (ETB/kg)',
-                             [45, 52, 58, 65, 72],
-                            backgroundColor: 'rgba(255, 123, 114, 0.7)',
-                            borderColor: '#FF7B72',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#C9D1D9' }
-                            },
-                            x: {
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#C9D1D9' }
-                            }
-                        }
-                    }
-                });
-            }
+            // Update charts
+            yieldChart.data.datasets[0].data = [data.yield*0.8, data.yield*0.9, data.yield];
+            rainfallChart.data.datasets[0].data = [data.rainfall*0.3, data.rainfall*0.6, data.rainfall];
+            yieldChart.update();
+            rainfallChart.update();
+          });
+        }
+      }).addTo(map);
+    }
 
-            function updateCharts(regionName, metrics) {
-                const baseYield = metrics.yield;
-                const yieldData = [
-                    baseYield * 0.8,
-                    baseYield * 0.85,
-                    baseYield * 0.9,
-                    baseYield * 0.95,
-                    baseYield
-                ];
-                const priceData = [
-                    Math.round(metrics.priceIndex * 0.7),
-                    Math.round(metrics.priceIndex * 0.8),
-                    Math.round(metrics.priceIndex * 0.9),
-                    Math.round(metrics.priceIndex * 0.95),
-                    Math.round(metrics.priceIndex)
-                ];
-                yieldChart.data.datasets[0].data = yieldData;
-                yieldChart.update();
-                priceChart.data.datasets[0].data = priceData;
-                priceChart.update();
-            }
+    // Initialize charts
+    const yieldChart = new Chart(document.getElementById('yield-chart'), {
+      type: 'line',
+      data: { labels: ['2022','2023','2024'], datasets: [{ label: 'Yield', data: [0,0,0], borderColor: 'blue' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 
-            initializeCharts();
-            updateMap();
+    const rainfallChart = new Chart(document.getElementById('rainfall-chart'), {
+      type: 'bar',
+      data: { labels: ['Q1','Q2','Q3'], datasets: [{ label: 'Rainfall', data: [0,0,0], backgroundColor: 'rgba(54,162,235,0.6)' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 
-            // Crop filter functionality
-            document.querySelectorAll('.btn[data-crop]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.btn[data-crop]').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                    currentCrop = this.getAttribute('data-crop');
-                    if (currentCrop === 'all') {
-                        document.querySelector('#status span').textContent = 'Showing data for all crops';
-                    } else {
-                        document.querySelector('#status span').textContent = `Filtering by ${currentCrop.charAt(0).toUpperCase() + currentCrop.slice(1)}`;
-                    }
-                    updateMap();
-                });
-            });
+    // Crop filter
+    document.querySelectorAll('.crop-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.crop-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCrop = btn.dataset.crop;
+        updateMap();
+      });
+    });
 
-            // Weather layer functionality (UI only)
-            document.querySelectorAll('.btn[data-layer]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.classList.toggle('weather-active');
-                    const layer = this.getAttribute('data-layer');
-                    if (this.classList.contains('weather-active')) {
-                        document.querySelector('#status span').textContent = `Showing ${layer} data layer`;
-                    } else {
-                        document.querySelector('#status span').textContent = `${layer} data layer disabled`;
-                    }
-                });
-            });
+    // Weather buttons (UI feedback only)
+    document.querySelectorAll('.weather-btn').forEach(btn => {
+      btn.addEventListener('click', () => btn.classList.toggle('active'));
+    });
 
-            // Date slider functionality
-            const dateSlider = document.getElementById('date-slider');
-            const dateDisplay = document.getElementById('date-display');
-            dateSlider.addEventListener('input', function() {
-                const dayOfYear = parseInt(this.value);
-                const date = new Date(2024, 0);
-                date.setDate(dayOfYear);
-                const options = { month: 'long', day: 'numeric', year: 'numeric' };
-                dateDisplay.textContent = date.toLocaleDateString('en-US', options);
-                document.querySelector('#status span').textContent = `Showing weather data for ${dateDisplay.textContent}`;
-            });
-
-            // Export functionality
-            document.getElementById('export-btn').addEventListener('click', function() {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<div class="spinner"></div> Exporting...';
-                setTimeout(() => {
-                    this.innerHTML = originalText;
-                    document.querySelector('#status span').textContent = 'Data exported successfully as CSV';
-                }, 1500);
-            });
-
-            // Reset functionality
-            document.getElementById('reset-btn').addEventListener('click', function() {
-                document.querySelectorAll('.btn[data-crop]').forEach(b => {
-                    b.classList.remove('active');
-                });
-                document.querySelector('.btn[data-crop="all"]').classList.add('active');
-                document.querySelectorAll('.btn[data-layer]').forEach(b => {
-                    b.classList.remove('weather-active');
-                });
-                dateSlider.value = 1;
-                dateDisplay.textContent = 'January 1, 2024';
-                document.getElementById('region-name').textContent = 'None';
-                const metricElements = document.querySelectorAll('.stat-value, .metric-value');
-                metricElements.forEach(el => {
-                    el.textContent = '-';
-                    el.classList.remove('danger', 'warning', 'success');
-                });
-                yieldChart.data.datasets[0].data = [6.2, 6.8, 7.1, 7.5, 7.8];
-                yieldChart.update();
-                priceChart.data.datasets[0].data = [45, 52, 58, 65, 72];
-                priceChart.update();
-                currentCrop = 'all';
-                updateMap();
-                document.querySelector('#status span').textContent = 'Dashboard reset to default view';
-            });
-
-            // Mobile menu toggle
-            document.getElementById('menu-toggle').addEventListener('click', function() {
-                document.getElementById('sidebar').classList.toggle('visible');
-            });
-            document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
-                document.querySelector('.nav-links').classList.toggle('active');
-            });
-
-            console.log("Dashboard initialization complete!");
-        });
-    </script>
+    // Initial render
+    updateMap();
+  </script>
 </body>
 </html>
